@@ -1,0 +1,53 @@
+{
+  "app": {
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "certpath": "C:\\Users\\qshh\\.ohos\\config\\default_ohos_d3kwZLurgqLa41ZbJuILQn61XMJ5MUrM_eFcBqDFHHE=.cer",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001AC83AC5CA87729EDA629AC75AAEBD0816FFEDEB39D8CA9576653EDAA7895DD4E5F536B4284313",
+          "profile": "C:\\Users\\qshh\\.ohos\\config\\default_ohos_d3kwZLurgqLa41ZbJuILQn61XMJ5MUrM_eFcBqDFHHE=.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "C:\\Users\\qshh\\.ohos\\config\\default_ohos_d3kwZLurgqLa41ZbJuILQn61XMJ5MUrM_eFcBqDFHHE=.p12",
+          "storePassword": "0000001A2130E095ABDF620B3239FA03FD5C5F29BC72D5E1DAFD7F0C3768C85895829819AF3B4931B78D"
+        }
+      }
+    ],
+    "products": [
+      {
+        "name": "default",
+        "signingConfig": "default",
+        "compatibleSdkVersion": "5.0.0(12)",
+        "runtimeOS": "HarmonyOS"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "name": "entry",
+      "srcPath": "./entry",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "video_player_ohos",
+      "srcPath": "C:/Users/qshh/AppData/Local/Pub/Cache/git/flutter_packages-4853d8f93bcb95bfb18b2a520b56132350ab55fc/packages/video_player/video_player_ohos/ohos",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    }
+  ]
+}
