@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../model/video_model.dart';
 import '../../service/net.dart';
+import '../../service/nav.dart';
+import '../vedio/vedio_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -149,76 +151,85 @@ class _HomePageState extends State<HomePage>
       color: Colors.white,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 视频封面
-          Stack(
-            children: [
-              AspectRatio(
-                aspectRatio: 16 / 10,
-                child: Image.network(
-                  video.pic,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey[300],
-                      child: const Center(child: Icon(Icons.error)),
-                    );
-                  },
-                ),
-              ),
-              Positioned(
-                right: 5,
-                bottom: 5,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    _formatDuration(video.duration),
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          // 视频标题
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              video.title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 14),
-            ),
-          ),
-          // 视频数据
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Row(
+      child: InkWell(
+        onTap: () {
+          context.push(VedioPage(
+            bvid: video.bvid,
+            title: video.title,
+            pic: video.pic,
+          ));
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 视频封面
+            Stack(
               children: [
-                Icon(Icons.remove_red_eye_outlined,
-                    size: 14, color: Colors.grey[600]),
-                const SizedBox(width: 2),
-                Text(
-                  _formatCount(video.stat.view),
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                AspectRatio(
+                  aspectRatio: 16 / 10,
+                  child: Image.network(
+                    video.pic,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey[300],
+                        child: const Center(child: Icon(Icons.error)),
+                      );
+                    },
+                  ),
                 ),
-                const SizedBox(width: 8),
-                Icon(Icons.comment_outlined, size: 14, color: Colors.grey[600]),
-                const SizedBox(width: 2),
-                Text(
-                  _formatCount(video.stat.danmaku),
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                Positioned(
+                  right: 5,
+                  bottom: 5,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      _formatDuration(video.duration),
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
+            // 视频标题
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                video.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 14),
+              ),
+            ),
+            // 视频数据
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Row(
+                children: [
+                  Icon(Icons.remove_red_eye_outlined,
+                      size: 14, color: Colors.grey[600]),
+                  const SizedBox(width: 2),
+                  Text(
+                    _formatCount(video.stat.view),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(Icons.comment_outlined, size: 14, color: Colors.grey[600]),
+                  const SizedBox(width: 2),
+                  Text(
+                    _formatCount(video.stat.danmaku),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
