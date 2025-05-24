@@ -216,6 +216,7 @@ class _VedioPageState extends State<VedioPage> {
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -229,7 +230,9 @@ class _VedioPageState extends State<VedioPage> {
                 SliverAppBar(
                   automaticallyImplyLeading: false,
                   pinned: true,
-                  expandedHeight: MediaQuery.of(context).size.width * 9 / 16,
+                  expandedHeight: _controller.value.isInitialized
+                      ? width * (_controller.value.size.height / _controller.value.size.width)
+                      : width * 9 / 16,
                   collapsedHeight: 56,
                   flexibleSpace: FlexibleSpaceBar(
                     background: _buildVideoPlayer(),
@@ -305,7 +308,9 @@ class _VedioPageState extends State<VedioPage> {
                   },
                   child: Container(
                     width: 120,
-                    height: 68,
+                    height: _controller.value.isInitialized
+                        ? 120 * (_controller.value.size.height / _controller.value.size.width)
+                        : 68,
                     decoration: BoxDecoration(
                       color: Colors.black,
                       borderRadius: BorderRadius.circular(8),
@@ -370,7 +375,9 @@ class _VedioPageState extends State<VedioPage> {
       child: Container(
         color: Colors.black,
         width: width,
-        height: width * 9 / 16, // 16:9比例
+        height: _controller.value.isInitialized
+            ? width * (_controller.value.size.height / _controller.value.size.width)
+            : width * 9 / 16, // 默认16:9比例
         child: Stack(
           alignment: Alignment.center,
           children: [

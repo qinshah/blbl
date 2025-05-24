@@ -131,12 +131,12 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildVideoGrid() {
     return GridView.builder(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(6),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
+        crossAxisSpacing: 6,
+        mainAxisSpacing: 6,
         maxCrossAxisExtent: 300,
-        childAspectRatio: 0.9,
+        childAspectRatio: 0.8,
       ),
       itemCount: _videoList.length,
       itemBuilder: (context, index) {
@@ -148,7 +148,9 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildVideoCard(VideoItem video) {
     return Card(
+      margin: EdgeInsets.zero,
       color: Colors.white,
+      elevation: 0,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: InkWell(
@@ -166,7 +168,7 @@ class _HomePageState extends State<HomePage>
             Stack(
               children: [
                 AspectRatio(
-                  aspectRatio: 16 / 10,
+                  aspectRatio: 1.4,
                   child: Image.network(
                     video.pic,
                     fit: BoxFit.cover,
@@ -178,56 +180,99 @@ class _HomePageState extends State<HomePage>
                     },
                   ),
                 ),
+                // 视频数据
                 Positioned(
-                  right: 5,
-                  bottom: 5,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    padding: const EdgeInsets.fromLTRB(6, 14, 6, 4),
                     decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(4),
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.4)
+                        ],
+                      ),
                     ),
-                    child: Text(
-                      _formatDuration(video.duration),
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
-                    ),
+                    child: Row(children: [
+                      // 播放量
+                      const Icon(Icons.remove_red_eye_outlined,
+                          size: 14, color: Colors.white),
+                      const SizedBox(width: 2),
+                      Text(
+                        _formatCount(video.stat.view),
+                        style:
+                            const TextStyle(fontSize: 12, color: Colors.white),
+                      ),
+                      const SizedBox(width: 8),
+                      // 弹幕量
+                      const Icon(Icons.comment_outlined,
+                          size: 14, color: Colors.white),
+                      const SizedBox(width: 2),
+                      Text(
+                        _formatCount(video.stat.danmaku),
+                        style:
+                            const TextStyle(fontSize: 12, color: Colors.white),
+                      ),
+                      Expanded(
+                        child: Text(
+                          maxLines: 1,
+                          textAlign: TextAlign.right,
+                          _formatDuration(video.duration),
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 12),
+                        ),
+                      )
+                    ]),
                   ),
                 ),
               ],
             ),
             // 视频标题
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                video.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 14),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  video.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 14),
+                ),
               ),
             ),
-            // 视频数据
+            // 视频作者
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
               child: Row(
                 children: [
-                  Icon(Icons.remove_red_eye_outlined,
-                      size: 14, color: Colors.grey[600]),
-                  const SizedBox(width: 2),
-                  Text(
-                    _formatCount(video.stat.view),
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  // TODO 如果视频是竖屏，显示竖屏标签
+                  Expanded(
+                    child: Text(
+                      video.owner.name,
+                      maxLines: 1,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                      ),
+                    ),
                   ),
-                  const SizedBox(width: 8),
-                  Icon(Icons.comment_outlined, size: 14, color: Colors.grey[600]),
-                  const SizedBox(width: 2),
-                  Text(
-                    _formatCount(video.stat.danmaku),
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  IconButton(
+                    style: IconButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    onPressed: () {
+                      // TODO 显示更多选项
+                    },
+                    icon: const Icon(Icons.more_vert),
                   ),
                 ],
               ),
-            ),
+            )
           ],
         ),
       ),

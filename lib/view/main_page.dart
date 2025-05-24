@@ -25,6 +25,9 @@ class _MainPageState extends State<MainPage> {
     return Scaffold(
       body: _navItems[_currentIndex].page,
       bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: Colors.transparent, // TODO 背景透明
+        
+        elevation: 0,
         currentIndex: _currentIndex,
         onTap: (index) {
           if (index != 2) { // 中间的发布按钮不切换页面

@@ -13,7 +13,10 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(colorSchemeSeed: const Color(0xFFFF5F8F)), // 修改为粉色主题
+      theme: ThemeData(
+        colorSchemeSeed: const Color(0xFFFF5F8F), // 主题色
+        scaffoldBackgroundColor: const Color.fromRGBO(238, 238, 238, 1), // 背景色
+      ), // 修改为粉色主题
       home: const MainPage(),
     );
   }
