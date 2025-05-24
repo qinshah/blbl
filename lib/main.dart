@@ -11,9 +11,9 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return  MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(colorSchemeSeed: Colors.teal),
+      theme: ThemeData(colorSchemeSeed: const Color(0xFFFF5F8F)), // 修改为粉色主题
       home: const MainPage(),
     );
   }
