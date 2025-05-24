@@ -4,6 +4,7 @@ import 'package:video_player/video_player.dart';
 import '../../model/video_recommend_model.dart';
 import '../../service/net.dart';
 import '../../service/nav.dart';
+import '../../service/video_service.dart';
 
 class VedioPage extends StatefulWidget {
   final String bvid;
@@ -27,22 +28,93 @@ class _VedioPageState extends State<VedioPage> {
   Timer? _controlsTimer;
   final List<RecommendVideo> _recommendVideos = [];
   bool _isLoading = true;
+  bool _isVideoLoading = true;
+  String? _errorMessage;
+  int? _cid;
 
   @override
   void initState() {
     super.initState();
-    // 初始化视频控制器
-    // TODO 注意：这里使用了一个示例URL，实际应用中应该根据bvid获取真实的视频URL
+    // 初始化一个空的控制器，稍后会更新
     _controller = VideoPlayerController.network(
       'https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4',
     );
-    _controller.initialize().then((_) {
-      setState(() {});
-      _controller.play();
-    });
-
+    
+    // 获取视频流URL并初始化播放器
+    _initVideoPlayer();
+    
     // 获取推荐视频
     _fetchRecommendVideos();
+  }
+
+  Future<void> _initVideoPlayer() async {
+    try {
+      setState(() {
+        _isVideoLoading = true;
+        _errorMessage = null;
+      });
+
+      // 首先获取视频信息，包括cid
+      final videoInfoData = await VideoService.getVideoInfo(widget.bvid);
+      _cid = VideoService.getCidFromVideoInfo(videoInfoData);
+
+      if (_cid == null) {
+        setState(() {
+          _isVideoLoading = false;
+          _errorMessage = '无法获取视频信息，请稍后再试';
+        });
+        return;
+      }
+
+      // 获取视频流URL
+      final data = await VideoService.getVideoStreamUrl(
+        bvid: widget.bvid,
+        cid: _cid!,
+      );
+
+      // 解析视频URL
+      final videoUrl = VideoService.parseVideoUrl(data);
+
+      if (videoUrl == null) {
+        setState(() {
+          _isVideoLoading = false;
+          _errorMessage = '无法获取视频流，请稍后再试';
+        });
+        return;
+      }
+
+      print('获取到视频URL: $videoUrl');
+
+      // 释放旧的控制器
+      await _controller.dispose();
+
+      // 创建新的控制器
+      _controller = VideoPlayerController.network(
+        videoUrl,
+        httpHeaders: {
+          'Referer': 'https://www.bilibili.com',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        },
+      );
+
+      // 初始化并播放
+      await _controller.initialize();
+      await _controller.play();
+
+      if (mounted) {
+        setState(() {
+          _isVideoLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isVideoLoading = false;
+          _errorMessage = '视频加载失败: $e';
+        });
+      }
+      print('视频加载失败: $e');
+    }
   }
 
   Future<void> _fetchRecommendVideos() async {
@@ -142,20 +214,41 @@ class _VedioPageState extends State<VedioPage> {
           alignment: Alignment.center,
           children: [
             // 视频播放器
-            _controller.value.isInitialized
-                ? AspectRatio(
-                    aspectRatio: _controller.value.aspectRatio,
-                    child: VideoPlayer(_controller),
-                  )
-                : Image.network(
-                    widget.pic,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: double.infinity,
-                  ),
+            if (_isVideoLoading) 
+              const Center(child: CircularProgressIndicator(color: Colors.white))
+            else if (_errorMessage != null)
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _errorMessage!,
+                      style: const TextStyle(color: Colors.white),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _initVideoPlayer,
+                      child: const Text('重试'),
+                    ),
+                  ],
+                ),
+              )
+            else if (_controller.value.isInitialized)
+              AspectRatio(
+                aspectRatio: _controller.value.aspectRatio,
+                child: VideoPlayer(_controller),
+              )
+            else
+              Image.network(
+                widget.pic,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: double.infinity,
+              ),
 
             // 控制界面
-            if (_showControls) ...[
+            if (_showControls && _controller.value.isInitialized && _errorMessage == null) ...[
               // 播放/暂停按钮
               IconButton(
                 icon: Icon(

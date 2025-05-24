@@ -101,7 +101,7 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildTabBar() {
     final tabs = ['推荐', '热门', '动画', '影视', '新征程'];
-    return Container(
+    return SizedBox(
       height: 40,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
@@ -132,7 +132,7 @@ class _HomePageState extends State<HomePage>
   Widget _buildVideoGrid() {
     return GridView.builder(
       padding: const EdgeInsets.all(8),
-      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         crossAxisSpacing: 8,
         mainAxisSpacing: 8,
         maxCrossAxisExtent: 300,

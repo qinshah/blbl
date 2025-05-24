@@ -6,9 +6,12 @@ class Net {
   static final dio = Dio();
 
   static Future<T> get<T>(
-    String url,
-  ) async {
-    final response = await dio.get(url);
+    String url, {
+    Map<String, dynamic>? queryParameters,
+    Map<String, dynamic>? headers,
+  }) async {
+    final options = Options(headers: headers);
+    final response = await dio.get(url, queryParameters: queryParameters, options: options);
     return response.data;
   }
 }
