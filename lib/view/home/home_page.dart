@@ -155,11 +155,8 @@ class _HomePageState extends State<HomePage>
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: InkWell(
         onTap: () {
-          context.push(VedioPage(
-            bvid: video.bvid,
-            title: video.title,
-            pic: video.pic,
-          ));
+          context.push(
+              VedioPage(bvid: video.bvid, title: video.title, pic: video.pic));
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

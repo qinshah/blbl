@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
-
 import 'view/main_page.dart';
+import 'service/media_kit_initializer.dart';
 
-void main() {
+void main() async {
+  // 确保Flutter绑定初始化
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // 初始化MediaKit（仅Windows平台）
+  await MediaKitInitializer.initialize();
+  
   runApp(const MainApp());
 }
 
@@ -16,7 +22,7 @@ class MainApp extends StatelessWidget {
       theme: ThemeData(
         colorSchemeSeed: const Color(0xFFFF5F8F), // 主题色
         scaffoldBackgroundColor: const Color.fromRGBO(238, 238, 238, 1), // 背景色
-      ), // 修改为粉色主题
+      ),
       home: const MainPage(),
     );
   }

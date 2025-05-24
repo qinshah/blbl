@@ -1,11 +1,16 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import '../../model/video_recommend_model.dart';
 import '../../service/net.dart';
 import '../../service/nav.dart';
 import '../../service/video_service.dart';
+import '../../service/player_service.dart';
+import 'player/universal_player.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 
+// TODO 修复小窗播放BUG
 class VedioPage extends StatefulWidget {
   final String bvid;
   final String title;
@@ -23,7 +28,8 @@ class VedioPage extends StatefulWidget {
 }
 
 class _VedioPageState extends State<VedioPage> {
-  late VideoPlayerController _controller;
+  late UniversalPlayerController _controller =
+      PlayerService.createController(videoUrl: '', headers: {});
   bool _showControls = false;
   Timer? _controlsTimer;
   final List<RecommendVideo> _recommendVideos = [];
@@ -34,32 +40,22 @@ class _VedioPageState extends State<VedioPage> {
   bool _isVideoMinimized = false;
   final ScrollController _scrollController = ScrollController();
 
+  // 视频尺寸信息
+  double _videoWidth = 16;
+  double _videoHeight = 9;
+
   @override
   void initState() {
     super.initState();
-    // 初始化一个空的控制器，稍后会更新
-    _controller = VideoPlayerController.network(
-      'https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4',
-    );
-    
+
     // 获取视频流URL并初始化播放器
     _initVideoPlayer();
-    
+
     // 获取推荐视频
     _fetchRecommendVideos();
 
     // 监听滚动事件，用于控制视频最小化
     _scrollController.addListener(_scrollListener);
-
-    // 添加视频控制器监听器，用于更新进度条
-    _controller.addListener(() {
-      if (mounted) {
-        setState(() {});
-      }
-    });
-
-    // 设置音量
-    _controller.setVolume(1.0);
   }
 
   void _scrollListener() {
@@ -119,12 +115,13 @@ class _VedioPageState extends State<VedioPage> {
       // 释放旧的控制器
       await _controller.dispose();
 
-      // 创建新的控制器
-      _controller = VideoPlayerController.network(
-        videoUrl,
-        httpHeaders: {
+      // 使用PlayerService创建跨平台控制器
+      _controller = PlayerService.createController(
+        videoUrl: videoUrl,
+        headers: {
           'Referer': 'https://www.bilibili.com',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         },
       );
 
@@ -132,17 +129,12 @@ class _VedioPageState extends State<VedioPage> {
       await _controller.initialize();
       await _controller.play();
 
-      // 添加监听器和设置音量
-      _controller.addListener(() {
-        if (mounted) {
-          setState(() {});
-        }
-      });
-      _controller.setVolume(1.0);
-
       if (mounted) {
         setState(() {
           _isVideoLoading = false;
+          // 初始化视频尺寸信息
+          _videoWidth = _controller.size.width;
+          _videoHeight = _controller.size.height;
         });
       }
     } catch (e) {
@@ -230,39 +222,46 @@ class _VedioPageState extends State<VedioPage> {
                 SliverAppBar(
                   automaticallyImplyLeading: false,
                   pinned: true,
-                  expandedHeight: _controller.value.isInitialized
-                      ? width * (_controller.value.size.height / _controller.value.size.width)
+                  expandedHeight: _controller.isInitialized
+                      ? width * (_videoHeight / _videoWidth)
                       : width * 9 / 16,
                   collapsedHeight: 56,
                   flexibleSpace: FlexibleSpaceBar(
                     background: _buildVideoPlayer(),
                   ),
-                  title: _isVideoMinimized ? Text(
-                    widget.title,
-                    style: const TextStyle(color: Colors.black, fontSize: 16),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ) : null,
+                  title: _isVideoMinimized
+                      ? Text(
+                          widget.title,
+                          style: const TextStyle(
+                              color: Colors.black, fontSize: 16),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        )
+                      : null,
                   leading: IconButton(
                     icon: const Icon(Icons.arrow_back, color: Colors.black),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  actions: _isVideoMinimized ? [
-                    // 最小化时的播放/暂停按钮
-                    IconButton(
-                      icon: Icon(
-                        _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
-                        color: Colors.black,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _controller.value.isPlaying
-                              ? _controller.pause()
-                              : _controller.play();
-                        });
-                      },
-                    ),
-                  ] : null,
+                  actions: _isVideoMinimized
+                      ? [
+                          // 最小化时的播放/暂停按钮
+                          IconButton(
+                            icon: Icon(
+                              _controller.isPlaying
+                                  ? Icons.pause
+                                  : Icons.play_arrow,
+                              color: Colors.black,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _controller.isPlaying
+                                    ? _controller.pause()
+                                    : _controller.play();
+                              });
+                            },
+                          ),
+                        ]
+                      : null,
                 ),
 
                 // 视频信息区域
@@ -293,7 +292,9 @@ class _VedioPageState extends State<VedioPage> {
             ),
 
             // 最小化时的视频播放器（固定在右下角）
-            if (_isVideoMinimized && _controller.value.isInitialized && _errorMessage == null)
+            if (_isVideoMinimized &&
+                _controller.isInitialized &&
+                _errorMessage == null)
               Positioned(
                 right: 16,
                 bottom: 16,
@@ -308,8 +309,8 @@ class _VedioPageState extends State<VedioPage> {
                   },
                   child: Container(
                     width: 120,
-                    height: _controller.value.isInitialized
-                        ? 120 * (_controller.value.size.height / _controller.value.size.width)
+                    height: _controller.isInitialized
+                        ? 120 * (_videoHeight / _videoWidth)
                         : 68,
                     decoration: BoxDecoration(
                       color: Colors.black,
@@ -327,7 +328,14 @@ class _VedioPageState extends State<VedioPage> {
                         // 小窗口中的视频
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          child: VideoPlayer(_controller),
+                          child: UniversalPlayer(
+                            videoUrl: _controller.dataSource,
+                            headers: _controller.headers,
+                            width: 120,
+                            height: 120 * (_videoHeight / _videoWidth),
+                            autoPlay: true,
+                            volume: 1.0,
+                          ),
                         ),
                         // 关闭按钮
                         Positioned(
@@ -375,15 +383,16 @@ class _VedioPageState extends State<VedioPage> {
       child: Container(
         color: Colors.black,
         width: width,
-        height: _controller.value.isInitialized
-            ? width * (_controller.value.size.height / _controller.value.size.width)
+        height: _controller.isInitialized
+            ? width * (_videoHeight / _videoWidth)
             : width * 9 / 16, // 默认16:9比例
         child: Stack(
           alignment: Alignment.center,
           children: [
             // 视频播放器
-            if (_isVideoLoading) 
-              const Center(child: CircularProgressIndicator(color: Colors.white))
+            if (_isVideoLoading)
+              const Center(
+                  child: CircularProgressIndicator(color: Colors.white))
             else if (_errorMessage != null)
               Center(
                 child: Column(
@@ -402,11 +411,19 @@ class _VedioPageState extends State<VedioPage> {
                   ],
                 ),
               )
-            else if (_controller.value.isInitialized)
-              AspectRatio(
-                aspectRatio: _controller.value.aspectRatio,
-                child: VideoPlayer(_controller),
-              )
+            else if (_controller.isInitialized)
+              // 使用UniversalPlayer替代VideoPlayer
+              Platform.isWindows
+                  ? Video(
+                      controller: _controller.mediaKitVideoController!,
+                      width: width,
+                      height: width * (_videoHeight / _videoWidth),
+                      fit: BoxFit.contain,
+                    )
+                  : AspectRatio(
+                      aspectRatio: _videoWidth / _videoHeight,
+                      child: VideoPlayer(_controller.videoPlayerController!),
+                    )
             else
               Image.network(
                 widget.pic,
@@ -416,17 +433,20 @@ class _VedioPageState extends State<VedioPage> {
               ),
 
             // 控制界面
-            if (_showControls && _controller.value.isInitialized && _errorMessage == null && !_isVideoMinimized) ...[              
+            if (_showControls &&
+                _controller.isInitialized &&
+                _errorMessage == null &&
+                !_isVideoMinimized) ...[
               // 播放/暂停按钮
               IconButton(
                 icon: Icon(
-                  _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                  _controller.isPlaying ? Icons.pause : Icons.play_arrow,
                   color: Colors.white,
                   size: 50,
                 ),
                 onPressed: () {
                   setState(() {
-                    _controller.value.isPlaying
+                    _controller.isPlaying
                         ? _controller.pause()
                         : _controller.play();
                   });
@@ -473,20 +493,19 @@ class _VedioPageState extends State<VedioPage> {
                   child: Row(
                     children: [
                       Text(
-                        _controller.value.isInitialized
-                            ? _formatDuration(
-                                _controller.value.position.inSeconds)
+                        _controller.isInitialized
+                            ? _formatDuration(_controller.position.inSeconds)
                             : '0:00',
                         style: const TextStyle(color: Colors.white),
                       ),
                       Expanded(
                         child: Slider(
-                          value: _controller.value.isInitialized
-                              ? _controller.value.position.inSeconds.toDouble()
+                          value: _controller.isInitialized
+                              ? _controller.position.inSeconds.toDouble()
                               : 0,
                           min: 0,
-                          max: _controller.value.isInitialized
-                              ? _controller.value.duration.inSeconds.toDouble()
+                          max: _controller.isInitialized
+                              ? _controller.duration.inSeconds.toDouble()
                               : 0,
                           onChanged: (value) {
                             _controller
@@ -495,9 +514,8 @@ class _VedioPageState extends State<VedioPage> {
                         ),
                       ),
                       Text(
-                        _controller.value.isInitialized
-                            ? _formatDuration(
-                                _controller.value.duration.inSeconds)
+                        _controller.isInitialized
+                            ? _formatDuration(_controller.duration.inSeconds)
                             : '0:00',
                         style: const TextStyle(color: Colors.white),
                       ),
