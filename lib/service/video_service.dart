@@ -97,8 +97,8 @@ class VideoService {
 
   /// 解析视频流URL
   /// 
-  /// 从API返回的数据中解析出可用的视频流URL
-  static String? parseVideoUrl(Map<String, dynamic> data) {
+  /// 从API返回的数据中解析出可用的视频流URL和音频流URL
+  static Map<String, String?>? parseVideoUrl(Map<String, dynamic> data) {
     try {
       if (data['code'] != 0) {
         print('获取视频流失败: ${data['message']}');
@@ -106,18 +106,34 @@ class VideoService {
       }
 
       final videoData = data['data'];
+      String? videoUrl;
+      String? audioUrl;
       
       // 处理dash格式
       if (videoData.containsKey('dash')) {
         final dash = videoData['dash'];
         if (dash['video'] != null && dash['video'].isNotEmpty) {
-          return dash['video'][0]['baseUrl'];
+          videoUrl = dash['video'][0]['baseUrl'];
         }
+        
+        // 获取音频流URL
+        if (dash['audio'] != null && dash['audio'].isNotEmpty) {
+          audioUrl = dash['audio'][0]['baseUrl'];
+        }
+        
+        return {
+          'videoUrl': videoUrl,
+          'audioUrl': audioUrl,
+        };
       }
       
       // 处理普通格式
       if (videoData.containsKey('durl') && videoData['durl'].isNotEmpty) {
-        return videoData['durl'][0]['url'];
+        videoUrl = videoData['durl'][0]['url'];
+        return {
+          'videoUrl': videoUrl,
+          'audioUrl': null, // 普通格式中音频和视频是一体的
+        };
       }
       
       return null;

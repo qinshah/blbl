@@ -50,6 +50,16 @@ class _VedioPageState extends State<VedioPage> {
 
     // 监听滚动事件，用于控制视频最小化
     _scrollController.addListener(_scrollListener);
+
+    // 添加视频控制器监听器，用于更新进度条
+    _controller.addListener(() {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+
+    // 设置音量
+    _controller.setVolume(1.0);
   }
 
   void _scrollListener() {
@@ -85,16 +95,17 @@ class _VedioPageState extends State<VedioPage> {
         return;
       }
 
-      // 获取视频流URL
+      // 获取视频流URL，使用fnval=1来获取MP4格式（音视频合一）
       final data = await VideoService.getVideoStreamUrl(
         bvid: widget.bvid,
         cid: _cid!,
+        fnval: 1, // 使用MP4格式，音视频合一
       );
 
       // 解析视频URL
-      final videoUrl = VideoService.parseVideoUrl(data);
+      final urlMap = VideoService.parseVideoUrl(data);
 
-      if (videoUrl == null) {
+      if (urlMap == null || urlMap['videoUrl'] == null) {
         setState(() {
           _isVideoLoading = false;
           _errorMessage = '无法获取视频流，请稍后再试';
@@ -102,6 +113,7 @@ class _VedioPageState extends State<VedioPage> {
         return;
       }
 
+      final videoUrl = urlMap['videoUrl']!;
       print('获取到视频URL: $videoUrl');
 
       // 释放旧的控制器
@@ -119,6 +131,14 @@ class _VedioPageState extends State<VedioPage> {
       // 初始化并播放
       await _controller.initialize();
       await _controller.play();
+
+      // 添加监听器和设置音量
+      _controller.addListener(() {
+        if (mounted) {
+          setState(() {});
+        }
+      });
+      _controller.setVolume(1.0);
 
       if (mounted) {
         setState(() {
