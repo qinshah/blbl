@@ -31,6 +31,8 @@ class _VedioPageState extends State<VedioPage> {
   bool _isVideoLoading = true;
   String? _errorMessage;
   int? _cid;
+  bool _isVideoMinimized = false;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -45,6 +47,23 @@ class _VedioPageState extends State<VedioPage> {
     
     // 获取推荐视频
     _fetchRecommendVideos();
+
+    // 监听滚动事件，用于控制视频最小化
+    _scrollController.addListener(_scrollListener);
+  }
+
+  void _scrollListener() {
+    // 当滚动位置超过一定值时，将视频最小化
+    // TODO 小播放器的关闭逻辑
+    if (_scrollController.offset > 200 && !_isVideoMinimized) {
+      setState(() {
+        _isVideoMinimized = true;
+      });
+    } else if (_scrollController.offset <= 200 && _isVideoMinimized) {
+      setState(() {
+        _isVideoMinimized = false;
+      });
+    }
   }
 
   Future<void> _initVideoPlayer() async {
@@ -170,6 +189,8 @@ class _VedioPageState extends State<VedioPage> {
   void dispose() {
     _controller.dispose();
     _controlsTimer?.cancel();
+    _scrollController.removeListener(_scrollListener);
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -178,24 +199,144 @@ class _VedioPageState extends State<VedioPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
           children: [
-            // 视频播放区域
-            _buildVideoPlayer(),
+            // 主内容区域
+            CustomScrollView(
+              controller: _scrollController,
+              slivers: [
+                // 视频播放区域（可折叠）
+                SliverAppBar(
+                  automaticallyImplyLeading: false,
+                  pinned: true,
+                  expandedHeight: MediaQuery.of(context).size.width * 9 / 16,
+                  collapsedHeight: 56,
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: _buildVideoPlayer(),
+                  ),
+                  title: _isVideoMinimized ? Text(
+                    widget.title,
+                    style: const TextStyle(color: Colors.black, fontSize: 16),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ) : null,
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.black),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  actions: _isVideoMinimized ? [
+                    // 最小化时的播放/暂停按钮
+                    IconButton(
+                      icon: Icon(
+                        _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                        color: Colors.black,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _controller.value.isPlaying
+                              ? _controller.pause()
+                              : _controller.play();
+                        });
+                      },
+                    ),
+                  ] : null,
+                ),
 
-            // 视频信息区域
-            _buildVideoInfo(),
+                // 视频信息区域
+                SliverToBoxAdapter(
+                  child: _buildVideoInfo(),
+                ),
 
-            // 分隔线
-            const Divider(height: 1),
+                // 分隔线
+                const SliverToBoxAdapter(
+                  child: Divider(height: 1),
+                ),
 
-            // 推荐视频列表
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _buildRecommendList(),
+                // 推荐视频列表
+                _isLoading
+                    ? const SliverFillRemaining(
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    : SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final video = _recommendVideos[index];
+                            return _buildRecommendItem(video);
+                          },
+                          childCount: _recommendVideos.length,
+                        ),
+                      ),
+              ],
             ),
+
+            // 最小化时的视频播放器（固定在右下角）
+            if (_isVideoMinimized && _controller.value.isInitialized && _errorMessage == null)
+              Positioned(
+                right: 16,
+                bottom: 16,
+                child: GestureDetector(
+                  onTap: () {
+                    // 点击小窗口时，滚动回顶部展开视频
+                    _scrollController.animateTo(
+                      0,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOut,
+                    );
+                  },
+                  child: Container(
+                    width: 120,
+                    height: 68,
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Stack(
+                      children: [
+                        // 小窗口中的视频
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: VideoPlayer(_controller),
+                        ),
+                        // 关闭按钮
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _controller.pause();
+                                _isVideoMinimized = false;
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.6),
+                                borderRadius: const BorderRadius.only(
+                                  bottomLeft: Radius.circular(8),
+                                  topRight: Radius.circular(8),
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -248,7 +389,7 @@ class _VedioPageState extends State<VedioPage> {
               ),
 
             // 控制界面
-            if (_showControls && _controller.value.isInitialized && _errorMessage == null) ...[
+            if (_showControls && _controller.value.isInitialized && _errorMessage == null && !_isVideoMinimized) ...[              
               // 播放/暂停按钮
               IconButton(
                 icon: Icon(
@@ -388,16 +529,6 @@ class _VedioPageState extends State<VedioPage> {
         const SizedBox(height: 4),
         Text(text, style: const TextStyle(fontSize: 12)),
       ],
-    );
-  }
-
-  Widget _buildRecommendList() {
-    return ListView.builder(
-      itemCount: _recommendVideos.length,
-      itemBuilder: (context, index) {
-        final video = _recommendVideos[index];
-        return _buildRecommendItem(video);
-      },
     );
   }
 
