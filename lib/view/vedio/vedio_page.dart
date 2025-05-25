@@ -32,11 +32,10 @@ class _VedioPageState extends State<VedioPage> {
   bool _isVideoLoading = true;
   String? _errorMessage;
   int? _cid;
+  late final _deviceWidth = MediaQuery.of(context).size.width;
   final ScrollController _scrollController = ScrollController();
 
-  // 视频尺寸信息
-  final _videoWidth = 16;
-  final _videoHeight = 9;
+  double _hWRatio = 9 / 16;
 
   @override
   void initState() {
@@ -106,6 +105,8 @@ class _VedioPageState extends State<VedioPage> {
       });
       if (mounted) {
         setState(() {
+          final videoSize = _controller.value.size;
+          _hWRatio = videoSize.width > videoSize.height ? 9 / 16 : 1;
           _isVideoLoading = false;
         });
       }
@@ -179,7 +180,6 @@ class _VedioPageState extends State<VedioPage> {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -193,9 +193,7 @@ class _VedioPageState extends State<VedioPage> {
                 SliverAppBar(
                   automaticallyImplyLeading: false,
                   pinned: true,
-                  expandedHeight: _controller.value.isInitialized
-                      ? width * (_videoHeight / _videoWidth)
-                      : width * 9 / 16,
+                  expandedHeight: _deviceWidth * _hWRatio,
                   collapsedHeight: 56,
                   flexibleSpace: FlexibleSpaceBar(
                     background: _buildVideoPlayer(),
@@ -296,15 +294,12 @@ class _VedioPageState extends State<VedioPage> {
   }
 
   Widget _buildVideoPlayer() {
-    final width = MediaQuery.of(context).size.width;
     return GestureDetector(
       onTap: _toggleControls,
       child: Container(
         color: Colors.black,
-        width: width,
-        height: _controller.value.isInitialized
-            ? width * (_videoHeight / _videoWidth)
-            : width * 9 / 16, // 默认16:9比例
+        width: _deviceWidth,
+        height: _deviceWidth * _hWRatio,
         child: Stack(
           alignment: Alignment.center,
           children: [
@@ -332,7 +327,7 @@ class _VedioPageState extends State<VedioPage> {
               )
             else if (_controller.value.isInitialized)
               AspectRatio(
-                aspectRatio: _videoWidth / _videoHeight,
+                aspectRatio: _controller.value.aspectRatio,
                 child: VideoPlayer(_controller),
               )
             else
