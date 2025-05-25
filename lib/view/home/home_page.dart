@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../model/video_model.dart';
-import '../../service/net.dart';
-import '../../service/nav.dart';
+import '../../service/net_service.dart';
+import '../../service/nav_extension.dart';
 import '../../provider/auth_provider.dart';
 import '../vedio/vedio_page.dart';
 import '../login/login_page.dart';

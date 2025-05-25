@@ -1,4 +1,4 @@
-import '../service/net.dart';
+import 'net_service.dart';
 
 class VideoService {
   VideoService._();
