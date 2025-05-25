@@ -113,36 +113,34 @@ class AuthProvider with ChangeNotifier {
   /// 开始轮询二维码状态
   void _startPolling() {
     if (_isPolling || _qrcodeKey == null) return;
-    
+
     _isPolling = true;
     _pollTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
       _pollQRCodeStatus();
     });
-    
-    // 3分钟后超时
-    Timer(const Duration(minutes: 3), () {
-      if (_qrStatus == QRCodeStatus.waiting || _qrStatus == QRCodeStatus.scanned) {
-        _updateQRStatus(QRCodeStatus.expired, '二维码已过期，请点击刷新');
-        _stopPolling();
-      }
-    });
+
   }
 
   /// 轮询二维码状态
   Future<void> _pollQRCodeStatus() async {
     if (_qrcodeKey == null) return;
-    
+
     try {
       final response = await Net.get(
-        'https://passport.bilibili.com/x/passport-login/web/qrcode/poll',
-        headers: {'qrcode_key': _qrcodeKey!},
+        // 将 qrcode_key 作为 URL 参数传递
+        'https://passport.bilibili.com/x/passport-login/web/qrcode/poll?qrcode_key=$_qrcodeKey',
+        // 移除 headers 中传递 qrcode_key 的部分
+        // headers: {'qrcode_key': _qrcodeKey!},
       );
-      
+
       if (response['code'] == 0) {
         final data = response['data'];
         final code = data['code'];
         final message = data['message'];
-        
+
+        // 打印服务器返回的状态码和消息
+        debugPrint('QR Poll Status: code=$code, message=$message');
+
         switch (code) {
           case 86101: // 未扫码
             _updateQRStatus(QRCodeStatus.waiting, '请使用哔哩哔哩客户端扫码登录');
