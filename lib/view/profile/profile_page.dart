@@ -441,10 +441,10 @@ class _ProfilePageState extends State<ProfilePage> {
                   height: 40,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
-                    image: const DecorationImage(
-                      image: NetworkImage('https://via.placeholder.com/40'),
-                      fit: BoxFit.cover,
-                    ),
+                    // image: const DecorationImage(
+                    //   image: NetworkImage('https://via.placeholder.com/40'),
+                    //   fit: BoxFit.cover,
+                    // ),
                   ),
                 ),
                 const SizedBox(width: 12),

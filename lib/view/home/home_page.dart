@@ -35,8 +35,10 @@ class _HomePageState extends State<HomePage>
         _videoList.clear();
         _isLoading = true;
       });
+      //  TODO 不生效 添加时间戳参数，尝试获取不同的推荐列表
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
       final data = await Net.get(
-          'https://api.bilibili.com/x/web-interface/wbi/index/top/feed/rcmd');
+          'https://api.bilibili.com/x/web-interface/wbi/index/top/feed/rcmd?_=$timestamp');
       final response = VideoListResponse.fromJson(data);
       setState(() {
         _videoList.addAll(response.data.items);
@@ -108,28 +110,31 @@ class _HomePageState extends State<HomePage>
                 height: 32,
                 margin: const EdgeInsets.only(right: 8),
                 decoration: BoxDecoration(
-                  color: _authProvider.isLoggedIn ? Colors.white : Colors.grey.shade300,
+                  color: _authProvider.isLoggedIn
+                      ? Colors.white
+                      : Colors.grey.shade300,
                   shape: BoxShape.circle,
                 ),
-                child: _authProvider.isLoggedIn && _authProvider.userInfo != null
-                    ? ClipOval(
-                        child: Image.network(
-                          _authProvider.userInfo!['face'] ?? '',
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(
-                              Icons.person,
-                              color: Colors.grey,
-                              size: 20,
-                            );
-                          },
-                        ),
-                      )
-                    : const Icon(
-                        Icons.person,
-                        color: Colors.grey,
-                        size: 20,
-                      ),
+                child:
+                    _authProvider.isLoggedIn && _authProvider.userInfo != null
+                        ? ClipOval(
+                            child: Image.network(
+                              _authProvider.userInfo!['face'] ?? '',
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(
+                                  Icons.person,
+                                  color: Colors.grey,
+                                  size: 20,
+                                );
+                              },
+                            ),
+                          )
+                        : const Icon(
+                            Icons.person,
+                            color: Colors.grey,
+                            size: 20,
+                          ),
               ),
             ),
             // 搜索框

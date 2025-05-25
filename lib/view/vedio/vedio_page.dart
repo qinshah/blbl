@@ -5,8 +5,6 @@ import '../../model/video_recommend_model.dart';
 import '../../service/net.dart';
 import '../../service/nav.dart';
 import '../../service/video_service.dart';
-import '../../service/player_service.dart';
-import 'player/vedio_player.dart';
 
 // TODO 修复小窗播放逻辑
 class VedioPage extends StatefulWidget {
@@ -26,8 +24,7 @@ class VedioPage extends StatefulWidget {
 }
 
 class _VedioPageState extends State<VedioPage> {
-  late UniversalPlayerController _controller =
-      PlayerService.createController(videoUrl: '', headers: {});
+  late VideoPlayerController _controller = VideoPlayerController.network('');
   bool _showControls = false;
   Timer? _controlsTimer;
   final List<RecommendVideo> _recommendVideos = [];
@@ -35,12 +32,11 @@ class _VedioPageState extends State<VedioPage> {
   bool _isVideoLoading = true;
   String? _errorMessage;
   int? _cid;
-  bool _isVideoMinimized = false;
   final ScrollController _scrollController = ScrollController();
 
   // 视频尺寸信息
-  double _videoWidth = 16;
-  double _videoHeight = 9;
+  final _videoWidth = 16;
+  final _videoHeight = 9;
 
   @override
   void initState() {
@@ -51,36 +47,17 @@ class _VedioPageState extends State<VedioPage> {
 
     // 获取推荐视频
     _fetchRecommendVideos();
-
-    // 监听滚动事件，用于控制视频最小化
-    _scrollController.addListener(_scrollListener);
-  }
-
-  void _scrollListener() {
-    // 当滚动位置超过一定值时，将视频最小化
-    // TODO 小播放器的关闭逻辑
-    if (_scrollController.offset > 200 && !_isVideoMinimized) {
-      setState(() {
-        _isVideoMinimized = true;
-      });
-    } else if (_scrollController.offset <= 200 && _isVideoMinimized) {
-      setState(() {
-        _isVideoMinimized = false;
-      });
-    }
   }
 
   Future<void> _initVideoPlayer() async {
+    setState(() {
+      _isVideoLoading = true;
+      _errorMessage = null;
+    });
     try {
-      setState(() {
-        _isVideoLoading = true;
-        _errorMessage = null;
-      });
-
       // 首先获取视频信息，包括cid
       final videoInfoData = await VideoService.getVideoInfo(widget.bvid);
       _cid = VideoService.getCidFromVideoInfo(videoInfoData);
-
       if (_cid == null) {
         setState(() {
           _isVideoLoading = false;
@@ -88,17 +65,14 @@ class _VedioPageState extends State<VedioPage> {
         });
         return;
       }
-
       // 获取视频流URL，使用fnval=1来获取MP4格式（音视频合一）
       final data = await VideoService.getVideoStreamUrl(
         bvid: widget.bvid,
         cid: _cid!,
         fnval: 1, // 使用MP4格式，音视频合一
       );
-
       // 解析视频URL
       final urlMap = VideoService.parseVideoUrl(data);
-
       if (urlMap == null || urlMap['videoUrl'] == null) {
         setState(() {
           _isVideoLoading = false;
@@ -106,33 +80,33 @@ class _VedioPageState extends State<VedioPage> {
         });
         return;
       }
-
       final videoUrl = urlMap['videoUrl']!;
       print('获取到视频URL: $videoUrl');
-
       // 释放旧的控制器
-      await _controller.dispose();
-
-      // 使用PlayerService创建跨平台控制器
-      _controller = PlayerService.createController(
-        videoUrl: videoUrl,
-        headers: {
+      if (_controller.value.isInitialized) {
+        await _controller.dispose();
+      }
+      // 直接使用video_player的VideoPlayerController
+      _controller = VideoPlayerController.network(
+        videoUrl,
+        httpHeaders: {
           'Referer': 'https://www.bilibili.com',
           'User-Agent':
               'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         },
       );
-
       // 初始化并播放
       await _controller.initialize();
       await _controller.play();
-
+      // 添加播放位置监听，用于更新进度条
+      _controller.addListener(() {
+        if (mounted) {
+          setState(() {});
+        }
+      });
       if (mounted) {
         setState(() {
           _isVideoLoading = false;
-          // 初始化视频尺寸信息
-          _videoWidth = _controller.size.width;
-          _videoHeight = _controller.size.height;
         });
       }
     } catch (e) {
@@ -199,7 +173,6 @@ class _VedioPageState extends State<VedioPage> {
   void dispose() {
     _controller.dispose();
     _controlsTimer?.cancel();
-    _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
     super.dispose();
   }
@@ -220,46 +193,74 @@ class _VedioPageState extends State<VedioPage> {
                 SliverAppBar(
                   automaticallyImplyLeading: false,
                   pinned: true,
-                  expandedHeight: _controller.isInitialized
+                  expandedHeight: _controller.value.isInitialized
                       ? width * (_videoHeight / _videoWidth)
                       : width * 9 / 16,
                   collapsedHeight: 56,
                   flexibleSpace: FlexibleSpaceBar(
                     background: _buildVideoPlayer(),
                   ),
-                  title: _isVideoMinimized
-                      ? Text(
-                          widget.title,
-                          style: const TextStyle(
-                              color: Colors.black, fontSize: 16),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        )
-                      : null,
-                  leading: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.black),
-                    onPressed: () => Navigator.pop(context),
+                  // 修改 title 和 leading 逻辑，使其在滚动时显示标题和返回按钮，并添加点击回到顶部的功能
+                  title: ListenableBuilder(
+                    listenable: _scrollController,
+                    builder: (context, child) {
+                      final isScrolled = _scrollController.hasClients &&
+                          _scrollController.offset > 0;
+                      return isScrolled
+                          ? GestureDetector(
+                              onTap: () {
+                                _scrollController.animateTo(
+                                  0,
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeOut,
+                                );
+                              },
+                              child: Text(
+                                widget.title,
+                                style: const TextStyle(
+                                    color: Colors.black, fontSize: 16),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            )
+                          : const SizedBox.shrink();
+                    },
                   ),
-                  actions: _isVideoMinimized
-                      ? [
-                          // 最小化时的播放/暂停按钮
-                          IconButton(
-                            icon: Icon(
-                              _controller.isPlaying
-                                  ? Icons.pause
-                                  : Icons.play_arrow,
-                              color: Colors.black,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _controller.isPlaying
-                                    ? _controller.pause()
-                                    : _controller.play();
-                              });
-                            },
-                          ),
-                        ]
-                      : null,
+                  leading: ListenableBuilder(
+                    listenable: _scrollController,
+                    builder: (context, child) {
+                      final isScrolled = _scrollController.hasClients &&
+                          _scrollController.offset > 0;
+                      return isScrolled
+                          ? IconButton(
+                              icon: const Icon(Icons.arrow_back,
+                                  color: Colors.black),
+                              onPressed: () => Navigator.pop(context),
+                            )
+                          : const SizedBox.shrink();
+                    },
+                  ),
+                  // 移除最小化时的 actions
+                  // actions: _isVideoMinimized
+                  //     ? [
+                  //         // 最小化时的播放/暂停按钮
+                  //         IconButton(
+                  //           icon: Icon(
+                  //             _controller.isPlaying
+                  //                 ? Icons.pause
+                  //                 : Icons.play_arrow,
+                  //             color: Colors.black,
+                  //           ),
+                  //           onPressed: () {
+                  //             setState(() {
+                  //               _controller.isPlaying
+                  //                   ? _controller.pause()
+                  //                   : _controller.play();
+                  //             });
+                  //           },
+                  //         ),
+                  //       ]
+                  //     : null,
                 ),
 
                 // 视频信息区域
@@ -288,86 +289,6 @@ class _VedioPageState extends State<VedioPage> {
                       ),
               ],
             ),
-
-            // 最小化时的视频播放器（固定在右下角）
-            if (_isVideoMinimized &&
-                _controller.isInitialized &&
-                _errorMessage == null)
-              Positioned(
-                right: 16,
-                bottom: 16,
-                child: GestureDetector(
-                  onTap: () {
-                    // 点击小窗口时，滚动回顶部展开视频
-                    _scrollController.animateTo(
-                      0,
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeOut,
-                    );
-                  },
-                  child: Container(
-                    width: 120,
-                    height: _controller.isInitialized
-                        ? 120 * (_videoHeight / _videoWidth)
-                        : 68,
-                    decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Stack(
-                      children: [
-                        // 小窗口中的视频
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: VedioPlayer(
-                            videoUrl: _controller.dataSource,
-                            headers: _controller.headers,
-                            width: 120,
-                            height: 120 * (_videoHeight / _videoWidth),
-                            autoPlay: true,
-                            volume: 1.0,
-                          ),
-                        ),
-                        // 关闭按钮
-                        Positioned(
-                          right: 0,
-                          top: 0,
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _controller.pause();
-                                _isVideoMinimized = false;
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(2),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.6),
-                                borderRadius: const BorderRadius.only(
-                                  bottomLeft: Radius.circular(8),
-                                  topRight: Radius.circular(8),
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.close,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
           ],
         ),
       ),
@@ -381,7 +302,7 @@ class _VedioPageState extends State<VedioPage> {
       child: Container(
         color: Colors.black,
         width: width,
-        height: _controller.isInitialized
+        height: _controller.value.isInitialized
             ? width * (_videoHeight / _videoWidth)
             : width * 9 / 16, // 默认16:9比例
         child: Stack(
@@ -409,10 +330,10 @@ class _VedioPageState extends State<VedioPage> {
                   ],
                 ),
               )
-            else if (_controller.isInitialized)
+            else if (_controller.value.isInitialized)
               AspectRatio(
                 aspectRatio: _videoWidth / _videoHeight,
-                child: VideoPlayer(_controller.videoPlayerController!),
+                child: VideoPlayer(_controller),
               )
             else
               Image.network(
@@ -424,19 +345,18 @@ class _VedioPageState extends State<VedioPage> {
 
             // 控制界面
             if (_showControls &&
-                _controller.isInitialized &&
-                _errorMessage == null &&
-                !_isVideoMinimized) ...[
+                _controller.value.isInitialized &&
+                _errorMessage == null) ...[
               // 播放/暂停按钮
               IconButton(
                 icon: Icon(
-                  _controller.isPlaying ? Icons.pause : Icons.play_arrow,
+                  _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
                   color: Colors.white,
                   size: 50,
                 ),
                 onPressed: () {
                   setState(() {
-                    _controller.isPlaying
+                    _controller.value.isPlaying
                         ? _controller.pause()
                         : _controller.play();
                   });
@@ -483,19 +403,17 @@ class _VedioPageState extends State<VedioPage> {
                   child: Row(
                     children: [
                       Text(
-                        _controller.isInitialized
-                            ? _formatDuration(_controller.position.inSeconds)
-                            : '0:00',
+                        _formatDuration(_controller.value.position.inSeconds),
                         style: const TextStyle(color: Colors.white),
                       ),
                       Expanded(
                         child: Slider(
-                          value: _controller.isInitialized
-                              ? _controller.position.inSeconds.toDouble()
+                          value: _controller.value.isInitialized
+                              ? _controller.value.position.inSeconds.toDouble()
                               : 0,
                           min: 0,
-                          max: _controller.isInitialized
-                              ? _controller.duration.inSeconds.toDouble()
+                          max: _controller.value.isInitialized
+                              ? _controller.value.duration.inSeconds.toDouble()
                               : 0,
                           onChanged: (value) {
                             _controller
@@ -504,8 +422,9 @@ class _VedioPageState extends State<VedioPage> {
                         ),
                       ),
                       Text(
-                        _controller.isInitialized
-                            ? _formatDuration(_controller.duration.inSeconds)
+                        _controller.value.isInitialized
+                            ? _formatDuration(
+                                _controller.value.duration.inSeconds)
                             : '0:00',
                         style: const TextStyle(color: Colors.white),
                       ),
@@ -570,11 +489,16 @@ class _VedioPageState extends State<VedioPage> {
   Widget _buildRecommendItem(RecommendVideo video) {
     return InkWell(
       onTap: () {
-        context.push(VedioPage(
+        _controller.pause();
+        context
+            .push(VedioPage(
           bvid: video.bvid,
           title: video.title,
           pic: video.pic,
-        ));
+        ))
+            .then((value) {
+          _controller.play();
+        });
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),

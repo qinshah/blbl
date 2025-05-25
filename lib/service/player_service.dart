@@ -6,7 +6,7 @@ import 'package:video_player/video_player.dart';
 
 
 /// 通用播放器控制器
-class UniversalPlayerController {
+class PlayerController {
   final String videoUrl;
   final Map<String, String> headers;
 
@@ -23,7 +23,7 @@ class UniversalPlayerController {
   double _volume = 1.0;
   Size _videoSize = const Size(16, 9);
 
-  UniversalPlayerController({
+  PlayerController({
     required this.videoUrl,
     required this.headers,
   });
@@ -111,12 +111,12 @@ class PlayerService {
   ///
   /// [videoUrl] 视频URL
   /// [headers] HTTP请求头
-  static UniversalPlayerController createController({
+  static PlayerController createController({
     required String videoUrl,
     required Map<String, String> headers,
   }) {
     // 移除Windows平台判断，直接返回UniversalPlayerController
-    return UniversalPlayerController(
+    return PlayerController(
       videoUrl: videoUrl,
       headers: headers,
     );
