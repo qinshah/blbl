@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../../model/video_model.dart';
 import '../../service/net.dart';
 import '../../service/nav.dart';
+import '../../provider/auth_provider.dart';
 import '../vedio/vedio_page.dart';
+import '../login/login_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,6 +15,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with AutomaticKeepAliveClientMixin {
+  // 获取AuthProvider实例
+  final _authProvider = AuthProvider();
   final _videoList = <VideoItem>[];
   bool _isLoading = true;
 
@@ -77,25 +81,83 @@ class _HomePageState extends State<HomePage>
   }
 
   Widget _buildSearchBar() {
-    return Container(
-      height: 36,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        children: [
-          const SizedBox(width: 8),
-          const Icon(Icons.search, color: Colors.grey),
-          const SizedBox(width: 4),
-          Expanded(
-            child: Text(
-              '灵笼第二季',
-              style: TextStyle(color: Colors.grey[600], fontSize: 14),
+    return ListenableBuilder(
+      listenable: _authProvider,
+      builder: (context, child) {
+        return Row(
+          children: [
+            // 登录按钮
+            GestureDetector(
+              onTap: () {
+                if (_authProvider.isLoggedIn) {
+                  // 已登录，显示用户信息或跳转到个人页面
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('已登录')),
+                  );
+                } else {
+                  // 未登录，跳转到登录页面
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const LoginPage(),
+                    ),
+                  );
+                }
+              },
+              child: Container(
+                width: 32,
+                height: 32,
+                margin: const EdgeInsets.only(right: 8),
+                decoration: BoxDecoration(
+                  color: _authProvider.isLoggedIn ? Colors.white : Colors.grey.shade300,
+                  shape: BoxShape.circle,
+                ),
+                child: _authProvider.isLoggedIn && _authProvider.userInfo != null
+                    ? ClipOval(
+                        child: Image.network(
+                          _authProvider.userInfo!['face'] ?? '',
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(
+                              Icons.person,
+                              color: Colors.grey,
+                              size: 20,
+                            );
+                          },
+                        ),
+                      )
+                    : const Icon(
+                        Icons.person,
+                        color: Colors.grey,
+                        size: 20,
+                      ),
+              ),
             ),
-          ),
-        ],
-      ),
+            // 搜索框
+            Expanded(
+              child: Container(
+                height: 36,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Row(
+                  children: [
+                    const SizedBox(width: 8),
+                    const Icon(Icons.search, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        '灵笼第二季',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

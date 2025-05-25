@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'home/home_page.dart';
+import 'profile/profile_page.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -17,7 +18,7 @@ class _MainPageState extends State<MainPage> {
     NavItem(title: '动态', icon: Icons.videocam_outlined, page: const Center(child: Text('动态'))),
     NavItem(title: '', icon: Icons.add_circle_outline, page: const Center(child: Text('发布'))),
     NavItem(title: '会员购', icon: Icons.shopping_bag_outlined, page: const Center(child: Text('会员购'))),
-    NavItem(title: '我的', icon: Icons.person_outline, page: const Center(child: Text('我的'))),
+    NavItem(title: '我的', icon: Icons.person_outline, page: const ProfilePage()),
   ];
 
   @override
