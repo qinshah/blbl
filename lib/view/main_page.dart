@@ -12,12 +12,21 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   int _currentIndex = 0;
-  
+
   final _navItems = [
     NavItem(title: '首页', icon: Icons.home, page: const HomePage()),
-    NavItem(title: '动态', icon: Icons.videocam_outlined, page: const Center(child: Text('动态'))),
-    NavItem(title: '', icon: Icons.add_circle_outline, page: const Center(child: Text('发布'))),
-    NavItem(title: '会员购', icon: Icons.shopping_bag_outlined, page: const Center(child: Text('会员购'))),
+    NavItem(
+        title: '动态',
+        icon: Icons.videocam_outlined,
+        page: const Center(child: Text('动态'))),
+    NavItem(
+        title: '',
+        icon: Icons.add_circle_outline,
+        page: const Center(child: Text('发布'))),
+    NavItem(
+        title: '会员购',
+        icon: Icons.shopping_bag_outlined,
+        page: const Center(child: Text('会员购'))),
     NavItem(title: '我的', icon: Icons.person_outline, page: const ProfilePage()),
   ];
 
@@ -26,12 +35,13 @@ class _MainPageState extends State<MainPage> {
     return Scaffold(
       body: _navItems[_currentIndex].page,
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.transparent, // TODO 背景透明
-        
+        // TODO 背景透明
+        backgroundColor: Colors.transparent,
         elevation: 0,
         currentIndex: _currentIndex,
         onTap: (index) {
-          if (index != 2) { // 中间的发布按钮不切换页面
+          if (index != 2) {
+            // 中间的发布按钮不切换页面
             setState(() {
               _currentIndex = index;
             });

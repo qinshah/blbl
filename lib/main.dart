@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'view/main_page.dart';
-import 'service/media_kit_initializer.dart';
+
 import 'provider/auth_provider.dart';
 
 void main() async {
   // 确保Flutter绑定初始化
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // 初始化MediaKit（仅Windows平台）
-  await MediaKitInitializer.initialize();
   
   // 初始化AuthProvider
   await AuthProvider().init();

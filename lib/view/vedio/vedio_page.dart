@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import '../../model/video_recommend_model.dart';
@@ -7,10 +6,9 @@ import '../../service/net.dart';
 import '../../service/nav.dart';
 import '../../service/video_service.dart';
 import '../../service/player_service.dart';
-import 'player/universal_player.dart';
-import 'package:media_kit_video/media_kit_video.dart';
+import 'player/vedio_player.dart';
 
-// TODO 修复小窗播放BUG
+// TODO 修复小窗播放逻辑
 class VedioPage extends StatefulWidget {
   final String bvid;
   final String title;
@@ -328,7 +326,7 @@ class _VedioPageState extends State<VedioPage> {
                         // 小窗口中的视频
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          child: UniversalPlayer(
+                          child: VedioPlayer(
                             videoUrl: _controller.dataSource,
                             headers: _controller.headers,
                             width: 120,
@@ -412,18 +410,10 @@ class _VedioPageState extends State<VedioPage> {
                 ),
               )
             else if (_controller.isInitialized)
-              // 使用UniversalPlayer替代VideoPlayer
-              Platform.isWindows
-                  ? Video(
-                      controller: _controller.mediaKitVideoController!,
-                      width: width,
-                      height: width * (_videoHeight / _videoWidth),
-                      fit: BoxFit.contain,
-                    )
-                  : AspectRatio(
-                      aspectRatio: _videoWidth / _videoHeight,
-                      child: VideoPlayer(_controller.videoPlayerController!),
-                    )
+              AspectRatio(
+                aspectRatio: _videoWidth / _videoHeight,
+                child: VideoPlayer(_controller.videoPlayerController!),
+              )
             else
               Image.network(
                 widget.pic,
@@ -621,43 +611,22 @@ class _VedioPageState extends State<VedioPage> {
                 ),
               ],
             ),
-            const SizedBox(width: 12),
-
-            // 视频信息
+            const SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     video.title,
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.bold),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 14),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    video.owner.name,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(Icons.remove_red_eye_outlined,
-                          size: 12, color: Colors.grey[600]),
-                      const SizedBox(width: 2),
-                      Text(
-                        '${video.stat.view}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(Icons.comment_outlined,
-                          size: 12, color: Colors.grey[600]),
-                      const SizedBox(width: 2),
-                      Text(
-                        '${video.stat.danmaku}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      ),
-                    ],
+                    '${video.owner.name} · ${_formatDuration(video.duration)}',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],
               ),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../provider/auth_provider.dart';
-import '../../service/nav.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});

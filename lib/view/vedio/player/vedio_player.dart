@@ -1,15 +1,13 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
-// Windows平台使用media_kit
-import 'package:media_kit/media_kit.dart';
-import 'package:media_kit_video/media_kit_video.dart';
+// TODO 播放器进度条更新、全屏播放
+
 
 /// 通用视频播放器组件
 /// 
 /// 根据平台自动选择合适的播放器实现
-class UniversalPlayer extends StatefulWidget {
+class VedioPlayer extends StatefulWidget {
   /// 视频URL
   final String videoUrl;
   
@@ -43,7 +41,7 @@ class UniversalPlayer extends StatefulWidget {
   /// 错误回调
   final void Function(String error)? onError;
 
-  const UniversalPlayer({
+  const VedioPlayer({
     super.key,
     required this.videoUrl,
     required this.headers,
@@ -59,27 +57,18 @@ class UniversalPlayer extends StatefulWidget {
   });
 
   @override
-  State<UniversalPlayer> createState() => _UniversalPlayerState();
+  State<VedioPlayer> createState() => _VedioPlayerState();
 }
 
-class _UniversalPlayerState extends State<UniversalPlayer> {
+class _VedioPlayerState extends State<VedioPlayer> {
   // VideoPlayer相关变量
   VideoPlayerController? _videoController;
-  bool _isVideoPlayerInitialized = false;
-  
-  // MediaKit相关变量
-  Player? _mediaKitPlayer;
-  VideoController? _mediaKitVideoController;
-  bool _isMediaKitInitialized = false;
   
   // 通用状态变量
   bool _isPlaying = false;
   bool _isInitialized = false;
   bool _hasError = false;
   String _errorMessage = '';
-  
-  // 判断当前平台是否为Windows
-  bool get _isWindows => Platform.isWindows;
 
   @override
   void initState() {
@@ -90,9 +79,8 @@ class _UniversalPlayerState extends State<UniversalPlayer> {
   @override
   void dispose() {
     // 释放资源
-    if (_isWindows) {
-      _mediaKitPlayer?.dispose();
-    } else {
+    // 释放资源
+    {
       _videoController?.dispose();
     }
     super.dispose();
@@ -101,11 +89,8 @@ class _UniversalPlayerState extends State<UniversalPlayer> {
   // 初始化播放器
   Future<void> _initPlayer() async {
     try {
-      if (_isWindows) {
-        await _initMediaKitPlayer();
-      } else {
-        await _initVideoPlayer();
-      }
+      // 移除Windows平台判断，直接使用video_player
+      await _initVideoPlayer();
     } catch (e) {
       _setError('初始化播放器失败: $e');
     }
@@ -137,7 +122,6 @@ class _UniversalPlayerState extends State<UniversalPlayer> {
       
       if (mounted) {
         setState(() {
-          _isVideoPlayerInitialized = true;
           _isInitialized = true;
           _isPlaying = _videoController!.value.isPlaying;
         });
@@ -169,65 +153,7 @@ class _UniversalPlayerState extends State<UniversalPlayer> {
   }
 
   // 初始化MediaKit播放器
-  Future<void> _initMediaKitPlayer() async {
-    try {
-      // 创建播放器实例
-      _mediaKitPlayer = Player();
-      _mediaKitVideoController = VideoController(_mediaKitPlayer!);
-      
-      // if (widget.headers.isNotEmpty) {
-      //   await _mediaKitPlayer!.setProperty(
-      //     'http-header-fields',
-      //     widget.headers.entries.map((e) => '${e.key}: ${e.value}').toList(),
-      //   );
-      // }
-      
-      // 打开媒体
-      await _mediaKitPlayer!.open(Media(widget.videoUrl));
-      
-      // 设置音量和循环
-      await _mediaKitPlayer!.setVolume(widget.volume * 100); // MediaKit音量范围是0-100
-      await _mediaKitPlayer!.setPlaylistMode(widget.loop ? PlaylistMode.loop : PlaylistMode.single);
-      
-      // 监听播放状态
-      _mediaKitPlayer!.stream.playing.listen((playing) {
-        if (mounted && playing != _isPlaying) {
-          setState(() {
-            _isPlaying = playing;
-          });
-          widget.onPlayingChanged?.call(playing);
-        }
-      });
-      
-      // 监听位置变化
-      _mediaKitPlayer!.stream.position.listen((position) {
-        if (mounted) {
-          widget.onPositionChanged?.call(
-            position,
-            _mediaKitPlayer!.state.duration,
-          );
-        }
-      });
-      
-      // 自动播放
-      if (widget.autoPlay) {
-        await _mediaKitPlayer!.play();
-      }
-      
-      if (mounted) {
-        setState(() {
-          _isMediaKitInitialized = true;
-          _isInitialized = true;
-          _isPlaying = _mediaKitPlayer!.state.playing;
-        });
-        
-        // 回调
-        widget.onInitialized?.call();
-      }
-    } catch (e) {
-      _setError('初始化MediaKit失败: $e');
-    }
-  }
+  // Future<void> _initMediaKitPlayer() async { ... } // 移除此方法
 
   // 设置错误状态
   void _setError(String message) {
@@ -242,38 +168,32 @@ class _UniversalPlayerState extends State<UniversalPlayer> {
 
   // 播放
   Future<void> play() async {
-    if (_isWindows) {
-      await _mediaKitPlayer?.play();
-    } else {
+    // 播放
+    {
       await _videoController?.play();
     }
   }
 
   // 暂停
   Future<void> pause() async {
-    if (_isWindows) {
-      await _mediaKitPlayer?.pause();
-    } else {
+    // 暂停
+    {
       await _videoController?.pause();
     }
   }
 
   // 跳转到指定位置
   Future<void> seekTo(Duration position) async {
-    if (_isWindows) {
-      await _mediaKitPlayer?.seek(position);
-    } else {
+    // 跳转
+    {
       await _videoController?.seekTo(position);
     }
   }
 
   // 设置音量
   Future<void> setVolume(double volume) async {
-    if (_isWindows) {
-      await _mediaKitPlayer?.setVolume(volume * 100); // MediaKit音量范围是0-100
-    } else {
-      await _videoController?.setVolume(volume);
-    }
+    // 移除Windows平台判断，直接使用video_player
+    await _videoController?.setVolume(volume);
   }
 
   @override
@@ -315,25 +235,15 @@ class _UniversalPlayerState extends State<UniversalPlayer> {
     }
     
     // 根据平台选择播放器实现
-    if (_isWindows) {
-      return SizedBox(
-        width: widget.width,
-        height: widget.height,
-        child: Video(
-          controller: _mediaKitVideoController!,
-          controls: NoVideoControls,
-          fill: Colors.black,
-        ),
-      );
-    } else {
-      return SizedBox(
-        width: widget.width,
-        height: widget.height,
-        child: AspectRatio(
-          aspectRatio: _videoController!.value.aspectRatio,
-          child: VideoPlayer(_videoController!),
-        ),
-      );
-    }
+    // 显示视频
+    // 移除Windows平台判断，直接使用video_player
+    return SizedBox(
+      width: widget.width,
+      height: widget.height,
+      child: AspectRatio(
+        aspectRatio: _videoController!.value.aspectRatio,
+        child: VideoPlayer(_videoController!),
+      ),
+    );
   }
 }

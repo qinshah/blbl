@@ -14,8 +14,8 @@
   },
   "overrides": {
     "@ohos/flutter_ohos": "file:./har/flutter.har",
-    "video_player_ohos": "../../../sdk/PubCache/git/flutter_packages-4853d8f93bcb95bfb18b2a520b56132350ab55fc/packages/video_player/video_player_ohos/ohos",
+    "video_player_ohos": "file:./har/video_player_ohos.har",
     "@ohos/flutter_module": "file:./entry",
-    "shared_preferences_ohos": "../../../sdk/PubCache/git/flutter_packages-4853d8f93bcb95bfb18b2a520b56132350ab55fc/packages/shared_preferences/shared_preferences_ohos/ohos"
+    "shared_preferences_ohos": "file:./har/shared_preferences_ohos.har"
   }
 }

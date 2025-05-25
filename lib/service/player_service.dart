@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
 // Windows平台使用media_kit
-import 'package:media_kit/media_kit.dart';
-import 'package:media_kit_video/media_kit_video.dart';
+
 
 /// 通用播放器控制器
 class UniversalPlayerController {
@@ -14,9 +13,7 @@ class UniversalPlayerController {
   // VideoPlayer控制器
   VideoPlayerController? _videoController;
 
-  // MediaKit控制器
-  Player? _mediaKitPlayer;
-  VideoController? _mediaKitVideoController;
+  
 
   // 播放器状态
   bool _isInitialized = false;
@@ -41,35 +38,8 @@ class UniversalPlayerController {
   Map<String, String>? get httpHeaders => headers;
 
   Future<void> initialize() async {
-    if (Platform.isWindows) {
-      // Windows平台使用MediaKit
-      _mediaKitPlayer = Player();
-      _mediaKitVideoController = VideoController(_mediaKitPlayer!);
-
-      // 打开媒体，并设置HTTP请求头
-      await _mediaKitPlayer!.open(Media(videoUrl, httpHeaders: headers));
-
-      // 监听状态变化
-      _mediaKitPlayer!.stream.playing.listen((playing) {
-        _isPlaying = playing;
-      });
-
-      _mediaKitPlayer!.stream.position.listen((position) {
-        _position = position;
-      });
-
-      _mediaKitPlayer!.stream.duration.listen((duration) {
-        _duration = duration;
-      });
-
-      _mediaKitPlayer!.stream.volume.listen((volume) {
-        _volume = volume / 100; // MediaKit音量范围是0-100
-      });
-
-      // 设置初始化状态
-      _isInitialized = true;
-      _videoSize = const Size(16, 9); // MediaKit暂不支持获取视频尺寸
-    } else {
+    // 使用video_player
+    {
       // 其他平台使用video_player
       _videoController = VideoPlayerController.network(
         videoUrl,
@@ -98,46 +68,31 @@ class UniversalPlayerController {
   }
 
   Future<void> play() async {
-    if (Platform.isWindows) {
-      await _mediaKitPlayer?.play();
-    } else {
-      await _videoController?.play();
-    }
+    // 移除Windows平台判断，直接使用video_player
+    await _videoController?.play();
   }
 
   Future<void> pause() async {
-    if (Platform.isWindows) {
-      await _mediaKitPlayer?.pause();
-    } else {
-      await _videoController?.pause();
-    }
+    // 移除Windows平台判断，直接使用video_player
+    await _videoController?.pause();
   }
 
   Future<void> seekTo(Duration position) async {
-    if (Platform.isWindows) {
-      await _mediaKitPlayer?.seek(position);
-    } else {
-      await _videoController?.seekTo(position);
-    }
+    // 移除Windows平台判断，直接使用video_player
+    await _videoController?.seekTo(position);
   }
 
   Future<void> setVolume(double volume) async {
-    if (Platform.isWindows) {
-      await _mediaKitPlayer?.setVolume(volume * 100); // MediaKit音量范围是0-100
-    } else {
-      await _videoController?.setVolume(volume);
-    }
+    // 移除Windows平台判断，直接使用video_player
+    await _videoController?.setVolume(volume);
   }
 
   Future<void> dispose() async {
-    if (Platform.isWindows) {
-      await _mediaKitPlayer?.dispose();
-    } else {
-      await _videoController?.dispose();
-    }
+    // 移除Windows平台判断，直接使用video_player
+    await _videoController?.dispose();
   }
 
-  VideoController? get mediaKitVideoController => _mediaKitVideoController;
+  // 移除mediaKitVideoController getter
   VideoPlayerController? get videoPlayerController => _videoController;
 }
 
@@ -160,6 +115,7 @@ class PlayerService {
     required String videoUrl,
     required Map<String, String> headers,
   }) {
+    // 移除Windows平台判断，直接返回UniversalPlayerController
     return UniversalPlayerController(
       videoUrl: videoUrl,
       headers: headers,
