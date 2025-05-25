@@ -32,7 +32,7 @@ class _VedioPageState extends State<VedioPage> {
   bool _isVideoLoading = true;
   String? _errorMessage;
   int? _cid;
-  late final _deviceWidth = MediaQuery.of(context).size.width;
+  late double _deviceWidth = MediaQuery.of(context).size.width;
   final ScrollController _scrollController = ScrollController();
 
   double _hWRatio = 9 / 16; // 默认宽高比
@@ -167,6 +167,7 @@ class _VedioPageState extends State<VedioPage> {
 
   @override
   Widget build(BuildContext context) {
+    _deviceWidth = MediaQuery.of(context).size.width;
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
