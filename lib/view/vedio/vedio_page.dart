@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // 用于屏幕方向控制
 import 'package:video_player/video_player.dart';
 import '../../model/video_recommend_model.dart';
 import '../../service/net_service.dart';
@@ -8,7 +7,7 @@ import '../../service/nav_extension.dart';
 import '../../service/video_service.dart';
 import './blbl_player.dart'; // 引入新的播放器组件
 
-// TODO 修复小窗播放逻辑
+
 class VedioPage extends StatefulWidget {
   final String bvid;
   final String title;

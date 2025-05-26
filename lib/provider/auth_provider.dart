@@ -25,10 +25,10 @@ class AuthProvider with ChangeNotifier {
   String? _qrcodeKey;
   String? _qrcodeUrl;
   String? get qrcodeUrl => _qrcodeUrl;
-  
+
   Timer? _pollTimer;
   bool _isPolling = false;
-  
+
   // 二维码状态
   QRCodeStatus _qrStatus = QRCodeStatus.waiting;
   QRCodeStatus get qrStatus => _qrStatus;
@@ -49,7 +49,7 @@ class AuthProvider with ChangeNotifier {
       _biliJct = prefs.getString('bili_jct');
       _dedeUserId = prefs.getString('DedeUserID');
       _dedeUserIdCkMd5 = prefs.getString('DedeUserID__ckMd5');
-      
+
       if (_sessData != null && _biliJct != null) {
         // 验证登录状态
         await _checkLoginStatus();
@@ -65,10 +65,11 @@ class AuthProvider with ChangeNotifier {
       final response = await Net.get(
         'https://api.bilibili.com/x/web-interface/nav',
         headers: {
-          'Cookie': 'SESSDATA=$_sessData; bili_jct=$_biliJct; DedeUserID=$_dedeUserId; DedeUserID__ckMd5=$_dedeUserIdCkMd5',
+          'Cookie':
+              'SESSDATA=$_sessData; bili_jct=$_biliJct; DedeUserID=$_dedeUserId; DedeUserID__ckMd5=$_dedeUserIdCkMd5',
         },
       );
-      
+
       if (response['code'] == 0 && response['data']['isLogin'] == true) {
         _isLoggedIn = true;
         _userInfo = response['data'];
@@ -86,16 +87,16 @@ class AuthProvider with ChangeNotifier {
   Future<bool> generateQRCode() async {
     try {
       _updateQRStatus(QRCodeStatus.loading, '正在生成二维码...');
-      
+
       final response = await Net.get(
         'https://passport.bilibili.com/x/passport-login/web/qrcode/generate',
       );
-      
+
       if (response['code'] == 0) {
         _qrcodeKey = response['data']['qrcode_key'];
         _qrcodeUrl = response['data']['url'];
         _updateQRStatus(QRCodeStatus.waiting, '请使用哔哩哔哩客户端扫码登录');
-        
+
         // 开始轮询
         _startPolling();
         return true;
@@ -118,7 +119,6 @@ class AuthProvider with ChangeNotifier {
     _pollTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
       _pollQRCodeStatus();
     });
-
   }
 
   /// 轮询二维码状态
@@ -170,7 +170,7 @@ class AuthProvider with ChangeNotifier {
     try {
       _stopPolling();
       _updateQRStatus(QRCodeStatus.success, '登录成功');
-      
+
       // 从响应中提取cookie信息
       final url = data['url'] as String?;
       if (url != null) {
@@ -180,13 +180,12 @@ class AuthProvider with ChangeNotifier {
         _dedeUserId = uri.queryParameters['DedeUserID'];
         _dedeUserIdCkMd5 = uri.queryParameters['DedeUserID__ckMd5'];
       }
-      
+
       // 保存到本地
       await _saveLoginData();
-      
+
       // 获取用户信息
       await _checkLoginStatus();
-      
     } catch (e) {
       debugPrint('处理登录成功失败: $e');
       _updateQRStatus(QRCodeStatus.error, '登录失败，请重试');
@@ -199,8 +198,10 @@ class AuthProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       if (_sessData != null) await prefs.setString('SESSDATA', _sessData!);
       if (_biliJct != null) await prefs.setString('bili_jct', _biliJct!);
-      if (_dedeUserId != null) await prefs.setString('DedeUserID', _dedeUserId!);
-      if (_dedeUserIdCkMd5 != null) await prefs.setString('DedeUserID__ckMd5', _dedeUserIdCkMd5!);
+      if (_dedeUserId != null)
+        await prefs.setString('DedeUserID', _dedeUserId!);
+      if (_dedeUserIdCkMd5 != null)
+        await prefs.setString('DedeUserID__ckMd5', _dedeUserIdCkMd5!);
     } catch (e) {
       debugPrint('保存登录数据失败: $e');
     }
@@ -214,14 +215,14 @@ class AuthProvider with ChangeNotifier {
       await prefs.remove('bili_jct');
       await prefs.remove('DedeUserID');
       await prefs.remove('DedeUserID__ckMd5');
-      
+
       _isLoggedIn = false;
       _userInfo = null;
       _sessData = null;
       _biliJct = null;
       _dedeUserId = null;
       _dedeUserIdCkMd5 = null;
-      
+
       notifyListeners();
     } catch (e) {
       debugPrint('清除登录数据失败: $e');
@@ -255,13 +256,11 @@ class AuthProvider with ChangeNotifier {
   }
 
   /// 获取认证头
-  Map<String, String> getAuthHeaders() {
-    if (!_isLoggedIn || _sessData == null || _biliJct == null) {
-      return {};
-    }
-    
+  Map<String, String>? getAuthHeaders() {
+    if (!_isLoggedIn) return null;
     return {
-      'Cookie': 'SESSDATA=$_sessData; bili_jct=$_biliJct; DedeUserID=$_dedeUserId; DedeUserID__ckMd5=$_dedeUserIdCkMd5',
+      'Cookie':
+          'SESSDATA=$_sessData; bili_jct=$_biliJct; DedeUserID=$_dedeUserId; DedeUserID__ckMd5=$_dedeUserIdCkMd5',
     };
   }
 
@@ -274,10 +273,10 @@ class AuthProvider with ChangeNotifier {
 
 /// 二维码状态枚举
 enum QRCodeStatus {
-  loading,   // 加载中
-  waiting,   // 等待扫码
-  scanned,   // 已扫码
-  success,   // 登录成功
-  expired,   // 已过期
-  error,     // 错误
+  loading, // 加载中
+  waiting, // 等待扫码
+  scanned, // 已扫码
+  success, // 登录成功
+  expired, // 已过期
+  error, // 错误
 }

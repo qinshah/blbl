@@ -188,11 +188,6 @@ class _BlblPlayerState extends State<BlblPlayer> {
                       textAlign: TextAlign.center,
                     ),
                     SizedBox(height: 16),
-                    // 可以添加重试按钮，但重试逻辑应由父组件处理，因为它拥有原始的bvid等信息
-                    // ElevatedButton(
-                    //   onPressed: () { /* TODO: 调用父组件的重试方法 */ },
-                    //   child: const Text('重试'),
-                    // ),
                   ],
                 ),
               )
