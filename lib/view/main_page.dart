@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'home/home_page.dart';
 import 'profile/profile_page.dart';
+import 'dynamic/dynamic_page.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -16,9 +17,7 @@ class _MainPageState extends State<MainPage> {
   final _navItems = [
     NavItem(title: '首页', icon: Icons.home, page: const HomePage()),
     NavItem(
-        title: '动态',
-        icon: Icons.videocam_outlined,
-        page: const Center(child: Text('动态'))),
+        title: '动态', icon: Icons.videocam_outlined, page: const DynamicPage()),
     NavItem(
         title: '',
         icon: Icons.add_circle_outline,
@@ -33,13 +32,17 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _navItems[_currentIndex].page,
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _navItems.map((item) => item.page).toList(),
+      ),
       bottomNavigationBar: BottomNavigationBar(
         // TODO 背景透明
         backgroundColor: Colors.transparent,
         elevation: 0,
         currentIndex: _currentIndex,
         onTap: (index) {
+          // TODO 底部导航栏刷新内容
           if (index != 2) {
             // 中间的发布按钮不切换页面
             setState(() {

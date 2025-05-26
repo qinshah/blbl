@@ -35,10 +35,14 @@ class _HomePageState extends State<HomePage>
         _videoList.clear();
         _isLoading = true;
       });
-      //  TODO 不生效 添加时间戳参数，尝试获取不同的推荐列表
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
+
+      // 获取认证头部
+      final authHeaders = _authProvider.getAuthHeaders();
+      // TODO 修复未登录时推荐内容不变的问题
       final data = await Net.get(
-          'https://api.bilibili.com/x/web-interface/wbi/index/top/feed/rcmd?_=$timestamp');
+        'https://api.bilibili.com/x/web-interface/wbi/index/top/feed/rcmd',
+        headers: authHeaders,
+      );
       final response = VideoListResponse.fromJson(data);
       setState(() {
         _videoList.addAll(response.data.items);
@@ -330,7 +334,7 @@ class _HomePageState extends State<HomePage>
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     onPressed: () {
-                      // TODO 显示更多选项
+                      // TODO 视频卡片显示更多选项
                     },
                     icon: const Icon(Icons.more_vert),
                   ),

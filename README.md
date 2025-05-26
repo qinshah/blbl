@@ -2,6 +2,16 @@
 
 哔哩哔哩
 
-## 计划
+gitee:https://gitee.com/qinshah/blbl
 
-- [ ] 如果将来需要支持更高清晰度的视频（如1080P+），可能需要考虑使用其他播放器插件，因为高清晰度视频通常只提供DASH格式，需要播放器支持分离的音视频流。
+github:https://github.com/qinshah/blbl
+
+## 说明
+
+使用鸿蒙flutter3.22版本开发的blbl，如何本地编译打包可以查看鸿蒙flutter仓库https://gitcode.com/openharmony-tpc/flutter_flutter
+
+项目处于初期阶段可能出现很多bug，欢迎提出issue
+
+## 待办
+
+见todo-tree.txt
