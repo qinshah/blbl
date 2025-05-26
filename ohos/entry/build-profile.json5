@@ -6,10 +6,10 @@
   "targets": [
     {
       "name": "default",
-      "runtimeOS": "HarmonyOS"
+      "runtimeOS": "OpenHarmony"
     },
     {
-      "name": "ohosTest",
+      "name": "ohosTest"
     }
   ]
 }
