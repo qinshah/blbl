@@ -126,17 +126,17 @@ class _BlblPlayerState extends State<BlblPlayer> {
     return [if (hours > 0) hours, minutes, seconds].map(twoDigits).join(':');
   }
 
-  @override
-  void didUpdateWidget(covariant BlblPlayer oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.controller != oldWidget.controller) {
-      oldWidget.controller.removeListener(_onControllerUpdated);
-      widget.controller.addListener(_onControllerUpdated);
-      if (mounted) {
-        setState(() {}); // 确保在controller改变时刷新UI
-      }
-    }
-  }
+  // @override
+  // void didUpdateWidget(covariant BlblPlayer oldWidget) {
+  //   super.didUpdateWidget(oldWidget);
+  //   if (widget.controller != oldWidget.controller) {
+  //     oldWidget.controller.removeListener(_onControllerUpdated);
+  //     widget.controller.addListener(_onControllerUpdated);
+  //     if (mounted) {
+  //       setState(() {}); // 确保在controller改变时刷新UI
+  //     }
+  //   }
+  // }
 
   @override
   void dispose() {
@@ -148,7 +148,6 @@ class _BlblPlayerState extends State<BlblPlayer> {
 
   @override
   Widget build(BuildContext context) {
-    print('使用${widget.isfullScreen ? '全屏' : '非全屏'}播放器');
     final controller = widget.controller;
     final deviceWidth = MediaQuery.of(context).size.width;
     // 宽高比，默认为16:9，如果视频已初始化，则使用视频的宽高比

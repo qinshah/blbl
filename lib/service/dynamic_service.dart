@@ -24,7 +24,7 @@ class DynamicService {
         'page': 1, // API文档中提到page参数，但实际分页依赖offset
       };
 
-      final data = await Net.get<Map<String, dynamic>>(
+      final data = await Net.resDataByGet<Map<String, dynamic>>(
         'https://api.bilibili.com/x/polymer/web-dynamic/v1/feed/all',
         queryParameters: queryParams,
         headers: authHeaders,

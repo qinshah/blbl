@@ -62,7 +62,7 @@ class AuthProvider with ChangeNotifier {
   /// 检查登录状态
   Future<void> _checkLoginStatus() async {
     try {
-      final response = await Net.get(
+      final response = await Net.resDataByGet(
         'https://api.bilibili.com/x/web-interface/nav',
         headers: {
           'Cookie':
@@ -88,7 +88,7 @@ class AuthProvider with ChangeNotifier {
     try {
       _updateQRStatus(QRCodeStatus.loading, '正在生成二维码...');
 
-      final response = await Net.get(
+      final response = await Net.resDataByGet(
         'https://passport.bilibili.com/x/passport-login/web/qrcode/generate',
       );
 
@@ -126,7 +126,7 @@ class AuthProvider with ChangeNotifier {
     if (_qrcodeKey == null) return;
 
     try {
-      final response = await Net.get(
+      final response = await Net.resDataByGet(
         // 将 qrcode_key 作为 URL 参数传递
         'https://passport.bilibili.com/x/passport-login/web/qrcode/poll?qrcode_key=$_qrcodeKey',
         // 移除 headers 中传递 qrcode_key 的部分

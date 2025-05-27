@@ -18,7 +18,7 @@ class VideoService {
         'bvid': bvid,
       };
 
-      final data = await Net.get<Map<String, dynamic>>(
+      final data = await Net.resDataByGet<Map<String, dynamic>>(
         'https://api.bilibili.com/x/web-interface/view',
         queryParameters: queryParams,
         headers: headers,
@@ -82,7 +82,7 @@ class VideoService {
         'fourk': '1',
       };
 
-      final data = await Net.get<Map<String, dynamic>>(
+      final data = await Net.resDataByGet<Map<String, dynamic>>(
         'https://api.bilibili.com/x/player/playurl',
         queryParameters: queryParams,
         headers: headers,

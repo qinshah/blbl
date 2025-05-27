@@ -39,7 +39,7 @@ class _HomePageState extends State<HomePage>
       // 获取认证头部
       final authHeaders = _authProvider.getAuthHeaders();
       // TODO 修复未登录时推荐内容不变的问题
-      final data = await Net.get(
+      final data = await Net.resDataByGet(
         'https://api.bilibili.com/x/web-interface/wbi/index/top/feed/rcmd',
         headers: authHeaders,
       );

@@ -5,7 +5,7 @@ class Net {
 
   static final dio = Dio();
 
-  static Future<T> get<T>(
+  static Future<T> resDataByGet<T>(
     String url, {
     Map<String, dynamic>? queryParameters,
     Map<String, dynamic>? headers,
