@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
-import '../../model/video_recommend_model.dart';
 import '../../service/nav_extension.dart';
 import '../../service/video_service.dart';
 import './blbl_player.dart';
 import 'info_view.dart';
+import 'comment_view.dart'; // 添加评论视图导入
 
 class VedioPage extends StatefulWidget {
   final String bvid;
@@ -128,114 +128,124 @@ class _VedioPageState extends State<VedioPage> {
 
   @override
   Widget build(BuildContext context) {
-    // 更新设备宽度以保证组件尺寸随窗口尺寸变化
     _deviceWidth = MediaQuery.of(context).size.width;
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(toolbarHeight: 0, backgroundColor: Colors.black),
-      body: CustomScrollView(
-        controller: _scrollController,
-        slivers: [
-          ListenableBuilder(
-            listenable: _controller,
-            child: _buildVedioPlayer(),
-            builder: (context, vedioPlayer) {
-              final height = _deviceWidth * _hWRatio;
-              return SliverPersistentHeader(
+      body: DefaultTabController(
+        length: 2,
+        child: NestedScrollView(
+          controller: _scrollController,
+          headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+            return [
+              // 视频播放器
+              ListenableBuilder(
+                listenable: _controller,
+                child: _buildVedioPlayer(),
+                builder: (context, vedioPlayer) {
+                  final height = _deviceWidth * _hWRatio;
+                  return SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _SliverPersistentHeaderDelegate(
+                      minHeight: _controller.value.isPlaying ? height : 50,
+                      maxHeight: height,
+                      child: ListenableBuilder(
+                        listenable: _scrollController,
+                        builder: (context, child) {
+                          double opacity =
+                              (_scrollController.offset - 100) / 100;
+                          switch (opacity) {
+                            case < 0:
+                              opacity = 0;
+                            case > 1:
+                              opacity = 1;
+                          }
+                          return Stack(children: [
+                            vedioPlayer!,
+                            if (!_controller.value.isPlaying &&
+                                _scrollController.offset > 50)
+                              GestureDetector(
+                                behavior: HitTestBehavior.translucent,
+                                onTap: () {
+                                  _controller.play();
+                                  _scrollController.animateTo(
+                                    0,
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeOut,
+                                  );
+                                },
+                                child: Container(
+                                  height: height,
+                                  alignment: Alignment.topCenter,
+                                  color: Color.fromRGBO(243, 143, 165, opacity),
+                                  child: Row(children: [
+                                    const BackButton(color: Colors.white),
+                                    IconButton(
+                                      onPressed: context.popUntil,
+                                      icon: const Icon(Icons.home,
+                                          color: Colors.white),
+                                    ),
+                                    const Expanded(child: SizedBox()),
+                                    const Icon(Icons.play_arrow,
+                                        color: Colors.white, size: 32),
+                                    const Text(
+                                      '继续播放',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                          color: Colors.white, fontSize: 16),
+                                    ),
+                                    const Expanded(child: SizedBox()),
+                                    IconButton(
+                                      onPressed: () {
+                                        showModalBottomSheet(
+                                          isScrollControlled: true,
+                                          context: context,
+                                          builder: _modalBottomSheetBuilder,
+                                        );
+                                      },
+                                      icon: const Icon(Icons.more_vert,
+                                          color: Colors.white),
+                                      color: Colors.white,
+                                    ),
+                                  ]),
+                                ),
+                              ),
+                          ]);
+                        },
+                      ),
+                    ),
+                  );
+                },
+              ),
+              // 标签栏
+              SliverPersistentHeader(
                 pinned: true,
                 delegate: _SliverPersistentHeaderDelegate(
-                  minHeight: _controller.value.isPlaying ? height : 50,
-                  maxHeight: height,
-                  child: ListenableBuilder(
-                    listenable: _scrollController,
-                    builder: (context, child) {
-                      double opacity = (_scrollController.offset - 100) / 100;
-                      switch (opacity) {
-                        case < 0:
-                          opacity = 0;
-                        case > 1:
-                          opacity = 1;
-                      }
-                      return Stack(children: [
-                        vedioPlayer!,
-                        if (!_controller.value.isPlaying &&
-                            _scrollController.offset > 50)
-                          GestureDetector(
-                            behavior: HitTestBehavior.translucent,
-                            onTap: () {
-                              // TODO 视频播放器直接固定顶部然后动态计算高度
-                              _controller.play();
-                              _scrollController.animateTo(
-                                0,
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeOut,
-                              );
-                            },
-                            child: Container(
-                              height: height,
-                              alignment: Alignment.topCenter,
-                              color: Color.fromRGBO(243, 143, 165, opacity),
-                              child: Row(children: [
-                                const BackButton(color: Colors.white),
-                                IconButton(
-                                  onPressed: context.popUntil,
-                                  icon: const Icon(Icons.home,
-                                      color: Colors.white),
-                                ),
-                                const Expanded(child: SizedBox()),
-                                const Icon(Icons.play_arrow,
-                                    color: Colors.white, size: 32),
-                                const Text(
-                                  '继续播放',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 16),
-                                ),
-                                const Expanded(child: SizedBox()),
-                                IconButton(
-                                  onPressed: () {
-                                    showModalBottomSheet(
-                                      isScrollControlled: true,
-                                      context: context,
-                                      builder: _modalBottomSheetBuilder,
-                                    );
-                                  },
-                                  icon: const Icon(Icons.more_vert,
-                                      color: Colors.white),
-                                  color: Colors.white,
-                                ),
-                              ]),
-                            ),
-                          )
-                      ]);
-                    },
+                  minHeight: 50,
+                  maxHeight: 50,
+                  child: Container(
+                    color: Colors.white,
+                    child: const TabBar(
+                      tabs: [Tab(text: '简介'), Tab(text: '评论')],
+                    ),
                   ),
                 ),
-              );
-            },
-          ),
-          // 标签栏
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: _SliverPersistentHeaderDelegate(
-              minHeight: 50,
-              maxHeight: 50,
-              child: const DefaultTabController(
-                length: 2,
-                child: TabBar(
-                  tabs: [Tab(text: '简介'), Tab(text: '评论')],
-                ),
               ),
-            ),
+            ];
+          },
+          body: TabBarView(
+            children: [
+              // 简介页面
+              InfoView(
+                bvid: widget.bvid,
+                controller: _controller,
+                title: widget.title,
+              ),
+              // 评论页面
+              CommentView(bvid: widget.bvid),
+            ],
           ),
-          // 视频简介等信息
-          SliverToBoxAdapter(child: _videoInfo()),
-          // 分隔线
-          const SliverToBoxAdapter(
-              child: Divider(height: 1, color: Colors.black12)),
-          // 推荐视频列表 TODO: 下拉加载更多推荐视频
-          InfoView(bvid: widget.bvid, controller: _controller),
-        ],
+        ),
       ),
     );
   }
@@ -321,47 +331,6 @@ class _VedioPageState extends State<VedioPage> {
       controller: _controller,
       pic: widget.pic,
       isfullScreen: false, // 在主页面，不是全屏
-    );
-  }
-
-  Widget _videoInfo() {
-    return Padding(
-      padding: const EdgeInsets.all(12.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // TODO: 展开显示简介；播放量、弹幕数、发布时间 实时观众数
-          Text(
-            widget.title,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 12),
-          // 互动按钮
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              // TODO: 实现点赞、投币、收藏、分享功能
-              _buildActionButton(Icons.thumb_up_outlined, '点赞'),
-              _buildActionButton(Icons.thumb_down_outlined, '不喜欢'),
-              _buildActionButton(Icons.monetization_on_outlined, '投币'),
-              _buildActionButton(Icons.star_outline, '收藏'),
-              _buildActionButton(Icons.share_outlined, '分享'),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton(IconData icon, String text) {
-    return Column(
-      children: [
-        Icon(icon, size: 24),
-        const SizedBox(height: 4),
-        Text(text, style: const TextStyle(fontSize: 12)),
-      ],
     );
   }
 }

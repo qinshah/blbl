@@ -7,12 +7,16 @@ import '../../service/net_service.dart';
 import 'vedio_page.dart';
 
 class InfoView extends StatefulWidget {
-  const InfoView(
-      {super.key, required this.bvid, required this.controller});
+  const InfoView({
+    super.key,
+    required this.bvid,
+    required this.controller,
+    required this.title,
+  });
 
   final String bvid;
-
   final VideoPlayerController controller;
+  final String title;
 
   @override
   State<InfoView> createState() => _InfoViewState();
@@ -38,18 +42,80 @@ class _InfoViewState extends State<InfoView> {
 
   @override
   Widget build(BuildContext context) {
-    if (_videos == null) {
-      return const SliverFillRemaining(
-        child: Center(
-          child: CircularProgressIndicator(),
+    return CustomScrollView(
+      slivers: [
+        // 视频简介信息
+        SliverToBoxAdapter(child: _videoInfo()),
+        // 分隔线
+        const SliverToBoxAdapter(
+          child: Divider(height: 1, color: Colors.black12),
         ),
-      );
-    }
-    return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) => _buildRecommendItem(_videos![index]),
-        childCount: _videos!.length,
+        // 推荐视频标题
+        const SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.all(12.0),
+            child: Text(
+              '相关推荐',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+        // 推荐视频列表
+        if (_videos == null)
+          const SliverFillRemaining(
+            child: Center(
+              child: CircularProgressIndicator(),
+            ),
+          )
+        else
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => _buildRecommendItem(_videos![index]),
+              childCount: _videos!.length,
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _videoInfo() {
+    return Padding(
+      padding: const EdgeInsets.all(12.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // TODO: 展开显示简介；播放量、弹幕数、发布时间 实时观众数
+          Text(
+            widget.title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 12),
+          // 互动按钮
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              // TODO: 实现点赞、投币、收藏、分享功能
+              _buildActionButton(Icons.thumb_up_outlined, '点赞'),
+              _buildActionButton(Icons.thumb_down_outlined, '不喜欢'),
+              _buildActionButton(Icons.monetization_on_outlined, '投币'),
+              _buildActionButton(Icons.star_outline, '收藏'),
+              _buildActionButton(Icons.share_outlined, '分享'),
+            ],
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildActionButton(IconData icon, String text) {
+    return Column(
+      children: [
+        Icon(icon, size: 24),
+        const SizedBox(height: 4),
+        Text(text, style: const TextStyle(fontSize: 12)),
+      ],
     );
   }
 
